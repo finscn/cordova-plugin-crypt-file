@@ -12,10 +12,10 @@
 #import <CommonCrypto/CommonCryptor.h>
 #import <CommonCrypto/CommonDigest.h>
 
+static NSArray* const CRYPT_FILES = @[@"html", @"htm", @"css", @"js", @"png", @"jpg", @"mp3", @"ogg"];
 
 static NSString* const kCryptKey = @"";
 static NSString* const kCryptIv = @"";
-
 
 @implementation CDVCryptURLProtocol
 
@@ -51,7 +51,7 @@ static NSString* const kCryptIv = @"";
         return NO;
     }
     NSString *extension = url.pathExtension;
-    NSArray *extArray = @[@"html", @"htm", @"css", @"js"];
+    NSArray *extArray = CRYPT_FILES;
     for (NSString* ext in extArray) {
         if ([extension isEqualToString:ext]) {
             return YES;

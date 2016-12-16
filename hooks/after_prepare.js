@@ -1,12 +1,13 @@
+var CRYPT_FILES = /.*\.(htm|html|js|css|png|jpg|mp3|ogg)$/;
 
 function findCryptoFiles(context, dir) {
-    var path              = context.requireCordovaModule('path'),
-        fs                = context.requireCordovaModule('fs');
+    var path = context.requireCordovaModule('path'),
+        fs   = context.requireCordovaModule('fs');
 
     var fileList = [];
     var list = fs.readdirSync(dir);
     list.filter(function(file) {
-        return fs.statSync(path.join(dir, file)).isFile() && /.*\.(htm|html|js|css)$/.test(file);
+        return fs.statSync(path.join(dir, file)).isFile() && CRYPT_FILES.test(file);
     }).forEach(function(file) {
         fileList.push(path.join(dir, file));
     });

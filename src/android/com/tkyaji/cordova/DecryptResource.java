@@ -33,6 +33,10 @@ public class DecryptResource extends CordovaPlugin {
         ".html",
         ".js",
         ".css",
+        ".png",
+        ".jpg",
+        ".mp3",
+        ".ogg",
     };
 
     @Override
