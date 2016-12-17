@@ -53,6 +53,10 @@ public class DecryptResource extends CordovaPlugin {
         Uri oriUri = this.fromPluginUri(uri);
         String uriStr = oriUri.toString().replace("/+++/", "/").split("\\?")[0];
 
+        LOG.d(TAG, "uri: " + uri);
+        LOG.d(TAG, "oriUri: " + oriUri);
+        LOG.d(TAG, "uriStr: " + uriStr);
+
         CordovaResourceApi.OpenForReadResult readResult =  this.webView.getResourceApi().openForRead(Uri.parse(uriStr), true);
 
         if (!isCryptFiles(uriStr)) {
@@ -70,6 +74,7 @@ public class DecryptResource extends CordovaPlugin {
         byte[] bytes = Base64.decode(strb.toString(), Base64.DEFAULT);
 
         LOG.d(TAG, "decrypt: " + uriStr);
+
         ByteArrayInputStream byteInputStream = null;
         try {
             SecretKey skey = new SecretKeySpec(CRYPT_KEY.getBytes("UTF-8"), "AES");
@@ -85,7 +90,7 @@ public class DecryptResource extends CordovaPlugin {
         }
 
         return new CordovaResourceApi.OpenForReadResult(
-                readResult.uri, byteInputStream, readResult.mimeType, readResult.length, readResult.assetFd);
+            readResult.uri, byteInputStream, readResult.mimeType, readResult.length, readResult.assetFd);
     }
 
     private String tofileUri(String uri) {

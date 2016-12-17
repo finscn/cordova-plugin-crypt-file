@@ -12,7 +12,7 @@
 #import <CommonCrypto/CommonCryptor.h>
 #import <CommonCrypto/CommonDigest.h>
 
-static NSArray* const CRYPT_FILES = @[@"html", @"htm", @"css", @"js", @"png", @"jpg", @"mp3", @"ogg"];
+static NSArray* const CRYPT_FILES = @[@"html", @"htm", @"css", @"js", @"png", @"jpg", @"ogg", @"mp3"];
 
 static NSString* const kCryptKey = @"";
 static NSString* const kCryptIv = @"";
@@ -24,17 +24,17 @@ static NSString* const kCryptIv = @"";
     if ([self checkCryptFile:theRequest.URL]) {
         return YES;
     }
-    
+
     return [super canInitWithRequest:theRequest];
 }
 
 - (void)startLoading
 {
     NSURL* url = self.request.URL;
-    
+
     if ([[self class] checkCryptFile:url]) {
         NSString *mimeType = [self getMimeType:url];
-        
+
         NSError* error;
         NSString* content = [[NSString alloc] initWithContentsOfFile:url.path encoding:NSUTF8StringEncoding error:&error];
         if (!error) {
@@ -42,7 +42,7 @@ static NSString* const kCryptIv = @"";
             [self sendResponseWithResponseCode:200 data:data mimeType:mimeType];
         }
     }
-    
+
     [super startLoading];
 }
 
@@ -64,7 +64,7 @@ static NSString* const kCryptIv = @"";
 {
     NSString *fullPath = url.path;
     NSString *mimeType = nil;
-    
+
     if (fullPath) {
         CFStringRef typeId = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, (__bridge CFStringRef)[fullPath pathExtension], NULL);
         if (typeId) {
@@ -86,16 +86,16 @@ static NSString* const kCryptIv = @"";
 }
 
 - (NSData *)decryptAES256WithKey:(NSString *)key iv:(NSString *)iv data:(NSString *)base64String {
-    
+
     NSData *data = [[NSData alloc] initWithBase64EncodedString:base64String options:0];
-    
+
     size_t bufferSize = [data length] + kCCBlockSizeAES128;
     void *buffer = malloc(bufferSize);
     size_t numBytesDecrypted = 0;
-    
+
     NSData *keyData = [key dataUsingEncoding:NSUTF8StringEncoding];
     NSData *ivData = [iv dataUsingEncoding:NSUTF8StringEncoding];
-    
+
     CCCryptorStatus status = CCCrypt(kCCDecrypt,
                                      kCCAlgorithmAES128,
                                      kCCOptionPKCS7Padding,
@@ -107,19 +107,19 @@ static NSString* const kCryptIv = @"";
                                      buffer,
                                      bufferSize,
                                      &numBytesDecrypted);
-    
+
     if (status == kCCSuccess) {
         return [NSData dataWithBytes:buffer length:numBytesDecrypted];
     }
     free(buffer);
-    
+
     return nil;
 }
 
 - (NSString*)getMimeTypeFromPath:(NSString*)fullPath
 {
     NSString* mimeType = nil;
-    
+
     if (fullPath) {
         CFStringRef typeId = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, (__bridge CFStringRef)[fullPath pathExtension], NULL);
         if (typeId) {
@@ -145,9 +145,9 @@ static NSString* const kCryptIv = @"";
     if (mimeType == nil) {
         mimeType = @"text/plain";
     }
-    
+
     NSHTTPURLResponse* response = [[NSHTTPURLResponse alloc] initWithURL:[[self request] URL] statusCode:statusCode HTTPVersion:@"HTTP/1.1" headerFields:@{@"Content-Type" : mimeType}];
-    
+
     [[self client] URLProtocol:self didReceiveResponse:response cacheStoragePolicy:NSURLCacheStorageNotAllowed];
     if (data != nil) {
         [[self client] URLProtocol:self didLoadData:data];

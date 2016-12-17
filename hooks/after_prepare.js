@@ -1,8 +1,8 @@
-var CRYPT_FILES = /.*\.(htm|html|js|css|png|jpg|mp3|ogg)$/;
+var CRYPT_FILES = /.*\.(htm|html|js|css|png|jpg|ogg|mp3)$/;
 
 function findCryptoFiles(context, dir) {
     var path = context.requireCordovaModule('path'),
-        fs   = context.requireCordovaModule('fs');
+        fs = context.requireCordovaModule('fs');
 
     var fileList = [];
     var list = fs.readdirSync(dir);
@@ -40,7 +40,7 @@ function replaceCryptKey_ios(pluginDir, key, iv) {
     var content = fs.readFileSync(sourceFile, 'utf-8');
 
     content = content.replace(/kCryptKey = @".*";/, 'kCryptKey = @"' + key + '";')
-                     .replace(/kCryptIv = @".*";/, 'kCryptIv = @"' + iv + '";');
+        .replace(/kCryptIv = @".*";/, 'kCryptIv = @"' + iv + '";');
 
     fs.writeFileSync(sourceFile, content, 'utf-8');
 }
@@ -53,22 +53,22 @@ function replaceCryptKey_android(pluginDir, key, iv) {
     var content = fs.readFileSync(sourceFile, 'utf-8');
 
     content = content.replace(/CRYPT_KEY = ".*";/, 'CRYPT_KEY = "' + key + '";')
-                     .replace(/CRYPT_IV = ".*";/, 'CRYPT_IV = "' + iv + '";');
+        .replace(/CRYPT_IV = ".*";/, 'CRYPT_IV = "' + iv + '";');
 
     fs.writeFileSync(sourceFile, content, 'utf-8');
 }
 
 module.exports = function(context) {
 
-    var path              = context.requireCordovaModule('path'),
-        fs                = context.requireCordovaModule('fs'),
-        crypto            = context.requireCordovaModule('crypto'),
-        Q                 = context.requireCordovaModule('q'),
-        cordova_util      = context.requireCordovaModule('cordova-lib/src/cordova/util'),
-        platforms         = context.requireCordovaModule('cordova-lib/src/platforms/platforms'),
-        Parser            = context.requireCordovaModule('cordova-lib/src/cordova/metadata/parser'),
-        ParserHelper      = context.requireCordovaModule('cordova-lib/src/cordova/metadata/parserhelper/ParserHelper'),
-        ConfigParser      = context.requireCordovaModule('cordova-common').ConfigParser;
+    var path = context.requireCordovaModule('path'),
+        fs = context.requireCordovaModule('fs'),
+        crypto = context.requireCordovaModule('crypto'),
+        Q = context.requireCordovaModule('q'),
+        cordova_util = context.requireCordovaModule('cordova-lib/src/cordova/util'),
+        platforms = context.requireCordovaModule('cordova-lib/src/platforms/platforms'),
+        Parser = context.requireCordovaModule('cordova-lib/src/cordova/metadata/parser'),
+        ParserHelper = context.requireCordovaModule('cordova-lib/src/cordova/metadata/parserhelper/ParserHelper'),
+        ConfigParser = context.requireCordovaModule('cordova-common').ConfigParser;
 
     var deferral = new Q.defer();
     var projectRoot = cordova_util.cdProjectRoot();
