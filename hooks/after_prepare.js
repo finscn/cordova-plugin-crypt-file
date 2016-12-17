@@ -1,4 +1,5 @@
 var CRYPT_FILES = /.*\.(htm|html|js|css|png|jpg|ogg|mp3)$/;
+var URL_FLAG = '/__cc__/';
 
 function findCryptoFiles(context, dir) {
     var path = context.requireCordovaModule('path'),
@@ -104,7 +105,7 @@ module.exports = function(context) {
             cfg.doc.getroot().getchildren().filter(function(child, idx, arr) {
                 return (child.tag == 'content');
             }).map(function(child) {
-                child.attrib.src = '/+++/' + child.attrib.src;
+                child.attrib.src = URL_FLAG + child.attrib.src;
             });
 
             cfg.write();

@@ -25,6 +25,8 @@ public class DecryptResource extends CordovaPlugin {
 
     private static final String URL_PREFIX = "http://localhost/";
 
+    private static final String URL_FLAG = "/__cc__/";
+
     private static final String CRYPT_KEY = "";
     private static final String CRYPT_IV = "";
 
@@ -41,7 +43,7 @@ public class DecryptResource extends CordovaPlugin {
 
     @Override
     public Uri remapUri(Uri uri) {
-        if (uri.toString().indexOf("/+++/") > -1) {
+        if (uri.toString().indexOf(URL_FLAG) > -1) {
             return this.toPluginUri(uri);
         } else {
             return uri;
@@ -51,7 +53,7 @@ public class DecryptResource extends CordovaPlugin {
     @Override
     public CordovaResourceApi.OpenForReadResult handleOpenForRead(Uri uri) throws IOException {
         Uri oriUri = this.fromPluginUri(uri);
-        String uriStr = oriUri.toString().replace("/+++/", "/").split("\\?")[0];
+        String uriStr = oriUri.toString().replace(URL_FLAG, "/").split("\\?")[0];
 
         LOG.d(TAG, "uri: " + uri);
         LOG.d(TAG, "oriUri: " + oriUri);
