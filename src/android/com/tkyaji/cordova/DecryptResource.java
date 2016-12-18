@@ -7,11 +7,13 @@ import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CordovaResourceApi;
 import org.apache.cordova.LOG;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.InputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -23,23 +25,23 @@ public class DecryptResource extends CordovaPlugin {
 
     private static final String TAG = "DecryptResource";
 
-    private static final String URL_PREFIX = "http://localhost/";
+    private static final String URL_FLAG = "/+++/";
 
-    private static final String URL_FLAG = "/__cc__/";
+    private static final String SECRET_HEADER = "=SE=";
 
-    private static final String CRYPT_KEY = "";
-    private static final String CRYPT_IV = "";
+    private static final String SECRET_KEY = "";
 
-    private static final String[] CRYPT_FILES = {
-        ".htm",
-        ".html",
-        ".js",
-        ".css",
-        ".png",
-        ".jpg",
-        ".mp3",
-        ".ogg",
-    };
+    public static byte[] getStreamBytes(InputStream stream) throws IOException {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        byte[] data = new byte[16384];  // 128 * 128
+        int nRead;
+        while ((nRead = stream.read(data, 0, data.length)) != -1) {
+            buffer.write(data, 0, nRead);
+        }
+        buffer.flush();
+
+        return buffer.toByteArray();
+    }
 
     @Override
     public Uri remapUri(Uri uri) {
@@ -55,62 +57,50 @@ public class DecryptResource extends CordovaPlugin {
         Uri oriUri = this.fromPluginUri(uri);
         String uriStr = oriUri.toString().replace(URL_FLAG, "/").split("\\?")[0];
 
-        LOG.d(TAG, "uri: " + uri);
-        LOG.d(TAG, "oriUri: " + oriUri);
-        LOG.d(TAG, "uriStr: " + uriStr);
-
         CordovaResourceApi.OpenForReadResult readResult =  this.webView.getResourceApi().openForRead(Uri.parse(uriStr), true);
 
-        if (!isCryptFiles(uriStr)) {
-            return readResult;
-        }
+        byte[] headBytes = SECRET_HEADER.getBytes("UTF-8");
+        int headSize = headBytes.length;
 
-        BufferedReader br = new BufferedReader(new InputStreamReader(readResult.inputStream));
-        StringBuilder strb = new StringBuilder();
-        String line = null;
-        while ((line = br.readLine()) != null) {
-            strb.append(line);
-        }
-        br.close();
+        byte[] fileBytes = getStreamBytes(readResult.inputStream);
+        int fileSize = fileBytes.length - headSize;
 
-        byte[] bytes = Base64.decode(strb.toString(), Base64.DEFAULT);
+        boolean encoded = fileSize >= 0;
 
-        LOG.d(TAG, "decrypt: " + uriStr);
-
-        ByteArrayInputStream byteInputStream = null;
-        try {
-            SecretKey skey = new SecretKeySpec(CRYPT_KEY.getBytes("UTF-8"), "AES");
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            cipher.init(Cipher.DECRYPT_MODE, skey, new IvParameterSpec(CRYPT_IV.getBytes("UTF-8")));
-
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            bos.write(cipher.doFinal(bytes));
-            byteInputStream = new ByteArrayInputStream(bos.toByteArray());
-
-        } catch (Exception ex) {
-            LOG.e(TAG, ex.getMessage());
-        }
-
-        return new CordovaResourceApi.OpenForReadResult(
-            readResult.uri, byteInputStream, readResult.mimeType, readResult.length, readResult.assetFd);
-    }
-
-    private String tofileUri(String uri) {
-        if (uri.startsWith(URL_PREFIX)) {
-            uri = uri.replace(URL_PREFIX, "file:///android_asset/www/");
-        }
-        if (uri.endsWith("/")) {
-            uri += "index.html";
-        }
-        return uri;
-    }
-
-    private boolean isCryptFiles(String uri) {
-        for (String ext: CRYPT_FILES) {
-            if (uri.endsWith(ext)) {
-                return true;
+        if (encoded){
+            for (int i = 0; i < headSize; i++) {
+                byte vA = headBytes[i];
+                byte vB = fileBytes[i];
+                if (vA != vB) {
+                    encoded = false;
+                    break;
+                }
             }
         }
-        return false;
+
+        LOG.d(TAG, "uri: " + encoded + "," + uriStr);
+
+        byte[] outputBytes;
+        if (encoded) {
+            outputBytes = new byte[fileSize];
+
+            byte[] keyBytes = SECRET_KEY.getBytes("UTF-8");
+            int keyLen = keyBytes.length;
+
+            for (int i = 0; i < fileSize; i++){
+                byte kv = keyBytes[i % keyLen];
+                byte v = fileBytes[i + headSize];
+                byte newV = (byte)(v ^ kv);
+                outputBytes[i] = newV;
+            }
+        } else {
+            outputBytes = fileBytes;
+        }
+
+
+        ByteArrayInputStream byteInputStream = new ByteArrayInputStream(outputBytes);
+
+        return new CordovaResourceApi.OpenForReadResult(
+                                                        readResult.uri, byteInputStream, readResult.mimeType, readResult.length, readResult.assetFd);
     }
 }
