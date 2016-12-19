@@ -4,67 +4,80 @@
 //
 //  Created by tkyaji on 2015/07/15.
 //
+//  Modified by finscn on 2016/12/20.
+//
 //
 
 #import "CDVCryptURLProtocol.h"
 
 #import <MobileCoreServices/MobileCoreServices.h>
-#import <CommonCrypto/CommonCryptor.h>
-#import <CommonCrypto/CommonDigest.h>
 
-static NSArray* const CRYPT_FILES = @[@"html", @"htm", @"css", @"js", @"png", @"jpg", @"ogg", @"mp3"];
 
-static NSString* const kCryptKey = @"";
-static NSString* const kCryptIv = @"";
+static const NSString* SECRET_HEADER = @"=SE=";
+static const NSString* SECRET_KEY = @"";
 
 @implementation CDVCryptURLProtocol
 
 + (BOOL)canInitWithRequest:(NSURLRequest*)theRequest
 {
-    if ([self checkCryptFile:theRequest.URL]) {
-        return YES;
-    }
-
-    return [super canInitWithRequest:theRequest];
+    return YES;
 }
 
 - (void)startLoading
 {
     NSURL* url = self.request.URL;
-
-    if ([[self class] checkCryptFile:url]) {
-        NSString *mimeType = [self getMimeType:url];
-
-        NSError* error;
-        NSString* content = [[NSString alloc] initWithContentsOfFile:url.path encoding:NSUTF8StringEncoding error:&error];
-        if (!error) {
-            NSData* data = [self decryptAES256WithKey:kCryptKey iv:kCryptIv data:content];
-            [self sendResponseWithResponseCode:200 data:data mimeType:mimeType];
-        }
-    }
-
+    
+    NSString *mimeType = [self getMimeType:url];
+    
+    NSMutableData *data = [NSMutableData dataWithContentsOfFile:url.path];
+    
+    [self decodeData:data];
+    
+    [self sendResponseWithResponseCode:200 data:data mimeType:mimeType];
+    
     [super startLoading];
 }
 
-+ (BOOL)checkCryptFile:(NSURL *)url {
-    if (![url.scheme isEqual: @"file"]) {
-        return NO;
+
+-(void)decodeData:(NSMutableData *)data {
+    
+    if (!data){
+        return;
     }
-    NSString *extension = url.pathExtension;
-    NSArray *extArray = CRYPT_FILES;
-    for (NSString* ext in extArray) {
-        if ([extension isEqualToString:ext]) {
-            return YES;
-        }
+    
+    NSData *headData = [SECRET_HEADER dataUsingEncoding:NSUTF8StringEncoding];
+    size_t headLen = headData.length;
+    char const *head = headData.bytes;
+    
+    char const *bytes = data.bytes;
+    for (int i = 0; i < headLen; i++) {
+        if (bytes[i]!=head[i]){
+            return;
+        };
     }
-    return NO;
+    
+    NSData *keyData = [SECRET_KEY dataUsingEncoding:NSUTF8StringEncoding];
+    size_t keyLen = keyData.length;
+    char const *key = keyData.bytes;
+    
+    NSRange range = NSMakeRange(0, headLen);
+    [data replaceBytesInRange:range withBytes:NULL length:0];
+    size_t dataSize = data.length;
+    char *mutableBytes = data.mutableBytes;
+    
+    for (int i = 0; i < dataSize; i++) {
+        char v = bytes[i];
+        char kv = key[i % keyLen];
+        mutableBytes[i] = v ^ kv;
+    }
 }
+
 
 - (NSString*)getMimeType:(NSURL *)url
 {
     NSString *fullPath = url.path;
     NSString *mimeType = nil;
-
+    
     if (fullPath) {
         CFStringRef typeId = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, (__bridge CFStringRef)[fullPath pathExtension], NULL);
         if (typeId) {
@@ -85,41 +98,11 @@ static NSString* const kCryptIv = @"";
     return mimeType;
 }
 
-- (NSData *)decryptAES256WithKey:(NSString *)key iv:(NSString *)iv data:(NSString *)base64String {
-
-    NSData *data = [[NSData alloc] initWithBase64EncodedString:base64String options:0];
-
-    size_t bufferSize = [data length] + kCCBlockSizeAES128;
-    void *buffer = malloc(bufferSize);
-    size_t numBytesDecrypted = 0;
-
-    NSData *keyData = [key dataUsingEncoding:NSUTF8StringEncoding];
-    NSData *ivData = [iv dataUsingEncoding:NSUTF8StringEncoding];
-
-    CCCryptorStatus status = CCCrypt(kCCDecrypt,
-                                     kCCAlgorithmAES128,
-                                     kCCOptionPKCS7Padding,
-                                     keyData.bytes,
-                                     kCCKeySizeAES256,
-                                     ivData.bytes,
-                                     data.bytes,
-                                     data.length,
-                                     buffer,
-                                     bufferSize,
-                                     &numBytesDecrypted);
-
-    if (status == kCCSuccess) {
-        return [NSData dataWithBytes:buffer length:numBytesDecrypted];
-    }
-    free(buffer);
-
-    return nil;
-}
 
 - (NSString*)getMimeTypeFromPath:(NSString*)fullPath
 {
     NSString* mimeType = nil;
-
+    
     if (fullPath) {
         CFStringRef typeId = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, (__bridge CFStringRef)[fullPath pathExtension], NULL);
         if (typeId) {
@@ -145,47 +128,14 @@ static NSString* const kCryptIv = @"";
     if (mimeType == nil) {
         mimeType = @"text/plain";
     }
-
+    
     NSHTTPURLResponse* response = [[NSHTTPURLResponse alloc] initWithURL:[[self request] URL] statusCode:statusCode HTTPVersion:@"HTTP/1.1" headerFields:@{@"Content-Type" : mimeType}];
-
+    
     [[self client] URLProtocol:self didReceiveResponse:response cacheStoragePolicy:NSURLCacheStorageNotAllowed];
     if (data != nil) {
         [[self client] URLProtocol:self didLoadData:data];
     }
     [[self client] URLProtocolDidFinishLoading:self];
-}
-
--(void)interceptData:(NSMutableData *)data {
-    
-    if (!data){
-        return;
-    }
-    
-    NSData *headData = [EJ_SECRET_HEADER dataUsingEncoding:NSUTF8StringEncoding];
-    size_t headLen = headData.length;
-    char const *head = headData.bytes;
-    
-    char const *bytes = data.bytes;
-    for (int i = 0; i < headLen; i++) {
-        if (bytes[i]!=head[i]){
-            return;
-        };
-    }
-    
-    NSData *keyData = [EJ_SECRET_KEY dataUsingEncoding:NSUTF8StringEncoding];
-    size_t keyLen = keyData.length;
-    char const *key = keyData.bytes;
-    
-    NSRange range = NSMakeRange(0, headLen);
-    [data replaceBytesInRange:range withBytes:NULL length:0];
-    size_t dataSize = data.length;
-    char *mutableBytes = data.mutableBytes;
-    
-    for (int i = 0; i < dataSize; i++) {
-        char v = bytes[i];
-        char kv = key[i % keyLen];
-        mutableBytes[i] = v ^ kv;
-    }
 }
 
 @end
