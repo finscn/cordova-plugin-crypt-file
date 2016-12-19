@@ -6,7 +6,7 @@ var SECRET_KEY_FILE = 'secret.js';
 var JAVA_FILE = 'com/tkyaji/cordova/DecryptResource.java';
 var IOS_FILE = 'CDVCryptURLProtocol.m';
 
-function replaceCryptKey_ios(pluginDir, key, iv) {
+function replaceCryptKey_ios(pluginDir, secretKey) {
 
     var sourceFile = path.join(pluginDir, IOS_FILE);
     var content = fs.readFileSync(sourceFile, 'utf-8');
