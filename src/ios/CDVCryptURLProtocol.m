@@ -20,7 +20,13 @@ static const NSString* SECRET_KEY = @"";
 
 + (BOOL)canInitWithRequest:(NSURLRequest*)theRequest
 {
-    return YES;
+    NSURL* theUrl = [theRequest URL];
+    
+    if ([[theUrl absoluteString] hasPrefix:@"file://"]) {
+        return YES;
+    }
+    
+    return [super canInitWithRequest:theRequest];
 }
 
 - (void)startLoading
