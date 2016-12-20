@@ -49,8 +49,8 @@ module.exports = function(context) {
         var wwwDir = platformInfo.locations.www;
 
         var secretKey = fs.readFileSync(wwwDir + '/' + SECRET_KEY_FILE, 'utf-8');
-        var randomInt = String(Math.random() * 1E8 >> 0) + (Math.random() * 1E8 >> 0);
-        fs.writeFileSync(wwwDir + '/' + SECRET_KEY_FILE, randomInt, 'utf-8');
+        var replaceText = String(new Date());
+        fs.writeFileSync(wwwDir + '/' + SECRET_KEY_FILE, replaceText, 'utf-8');
 
         if (platform == 'ios') {
             var ios_parser = context.requireCordovaModule('cordova-lib/src/cordova/metadata/ios_parser');
