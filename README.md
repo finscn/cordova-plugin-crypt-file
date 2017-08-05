@@ -14,10 +14,33 @@ or
 `cordova run [ios / android]`  
 
 ## Encryption subjects.
+
+### Default
+
 * .html
 * .htm
 * .js
 * .css
+
+### Edit subjects
+
+You can specify the encryption subjects by editing `plugin.xml`.
+
+**plugins/cordova-plugin-crypt-file/plugin.xml**
+
+```
+<cryptfiles>
+    <include>
+        <file regex="\.(htm|html|js|css)$" />
+    </include>
+    <exclude>
+        <file regex="exclude_file\.js$" />
+    </exclude>
+</cryptfiles>
+```
+
+Specify the target file as a regular expression.
+
 
 ## Supported platforms
 * iOS
