@@ -16,6 +16,12 @@
 static const NSString* SECRET_HEADER = @"=SE=";
 static const NSString* SECRET_KEY = @"";
 
+static int const kIncludeFileLength = 0;
+static int const kExcludeFileLength = 0;
+static NSString* const kIncludeFiles[] = { };
+static NSString* const kExcludeFiles[] = { };
+
+
 @implementation CDVCryptURLProtocol
 
 + (BOOL)canInitWithRequest:(NSURLRequest*)theRequest

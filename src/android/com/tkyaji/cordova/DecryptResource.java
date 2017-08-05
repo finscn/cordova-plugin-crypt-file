@@ -31,6 +31,9 @@ public class DecryptResource extends CordovaPlugin {
 
     private static final String SECRET_KEY = "";
 
+    private static final String[] INCLUDE_FILES = new String[] { };
+    private static final String[] EXCLUDE_FILES = new String[] { };
+
     public static byte[] getStreamBytes(InputStream stream) throws IOException {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         byte[] data = new byte[16384];  // 128 * 128
