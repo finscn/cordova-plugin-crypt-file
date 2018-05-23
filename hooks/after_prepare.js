@@ -54,7 +54,8 @@ module.exports = function(context) {
             replaceCryptKey_ios(pluginDir, secretKey);
 
         } else if (platform == 'android') {
-            var pluginDir = path.join(platformPath, 'src');
+            var pluginInfo = context.opts.plugin.pluginInfo;
+            var pluginDir = path.join(pluginInfo.dir, 'src', platform);
             replaceCryptKey_android(pluginDir, secretKey);
 
             var cfg = new ConfigParser(platformInfo.projectConfig.path);
