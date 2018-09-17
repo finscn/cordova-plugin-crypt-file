@@ -56,6 +56,7 @@ module.exports = function(context) {
         } else if (platform == 'android') {
             var pluginInfo = context.opts.plugin.pluginInfo;
             var pluginDir = path.join(pluginInfo.dir, 'src', platform);
+
             replaceCryptKey_android(pluginDir, secretKey);
 
             var cfg = new ConfigParser(platformInfo.projectConfig.path);
@@ -121,6 +122,8 @@ module.exports = function(context) {
     function replaceCryptKey_android(pluginDir, secretKey) {
 
         var sourceFile = path.join(pluginDir, JAVA_FILE);
+        var targetFile = path.join(projectRoot, "platforms/android/app/src/main/java", JAVA_FILE);
+
         var content = fs.readFileSync(sourceFile, 'utf-8');
 
         content = content.replace(/SECRET_KEY = ".*";/, 'SECRET_KEY = "' + secretKey + '";');
@@ -132,6 +135,10 @@ module.exports = function(context) {
             .replace(/EXCLUDE_FILES = new String\[\] {.*};/, 'EXCLUDE_FILES = new String[] { ' + excludeArrStr + ' };');
 
         fs.writeFileSync(sourceFile, content, 'utf-8');
+
+        if (fs.existsSync(targetFile)) {
+            fs.writeFileSync(targetFile, content, 'utf-8');
+        }
     }
 
 }
